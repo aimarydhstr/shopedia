@@ -36,17 +36,29 @@
                                         @endif
                                         <td>
                                         <div class="input-group">
+                                            @if($cart->qty > 1)
                                             <button class="btn btn-outline-secondary" type="button" id="button-minus-{{ $cart->id }}" onclick="event.preventDefault(); document.getElementById('remove-{{ $cart->id }}').submit();">
                                                 <i class="bi bi-dash"></i>
                                             </button>
+                                            @else
+                                            <button class="btn btn-outline-secondary" type="button" disabled>
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            @endif
                                             <form id="remove-{{ $cart->id }}" action="{{ route('carts.remove', $cart->id) }}" method="POST" style="display: none;">
                                                 @csrf
                                                 @method('PUT')
                                             </form>
                                             <input type="text" class="form-control text-center" value="{{ $cart->qty }}" readonly style="width: 30px">
+                                            @if($cart->qty <= $cart->product->stock)
                                             <button class="btn btn-outline-secondary" type="button" id="button-plus-{{ $cart->id }}" onclick="event.preventDefault(); document.getElementById('add-{{ $cart->id }}').submit();">
                                                 <i class="bi bi-plus"></i>
                                             </button>
+                                            @else
+                                            <button class="btn btn-outline-secondary" type="button" disabled>
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            @endif
                                             <form id="add-{{ $cart->id }}" action="{{ route('carts.add', $cart->id) }}" method="POST" style="display: none;">
                                                 @csrf
                                                 @method('PUT')
@@ -76,16 +88,59 @@
                                 @endforelse
                             </tbody>
                         </table>
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between my-4 col-md-8 mx-auto">
                             <div>
-                            <p class="mb-0">Total Semua</p>
-                            <p><b>{{ 'Rp ' . number_format($total, 0, ',', '.') }}</b></p>
+                                <p>Subtotal</p>
+                                <p>Pajak</p>
+                                <p>Total Semua</p>
                             </div>
-                            <a href="#" class="btn btn-success">Bayar Transaksi</a>
+                            <div>
+                                <p><b>{{ 'Rp' . number_format($total, 0, ',', '.') }}</b></p>
+                                <p><b>{{ 'Rp' . number_format(2500, 0, ',', '.') }}</b></p>
+                                <p><b>{{ 'Rp' . number_format($total + 2500, 0, ',', '.') }}</b></p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-success" data-toggle="modal" data-target="#paymentModal">Bayar Transaksi</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">Bukti Transfer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('transactions.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <p>Silakan transfer ke nomor rekening berikut:</p>
+                        <p>Nomor Rekening: 1234567890</p>
+                        <p>Jumlah yang harus dibayarkan: {{ 'Rp ' . number_format($total, 0, ',', '.') }}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Upload Bukti TF</label>
+                        <input type="file" class="form-control mt-2" id="image" name="image" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 @endsection

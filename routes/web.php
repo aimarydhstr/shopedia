@@ -9,6 +9,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\TransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +32,8 @@ Route::post('/cart/{slug}', [CartController::class, 'store'])->name('carts.store
 Route::put('/cart/{id}/add', [CartController::class, 'add'])->name('carts.add')->middleware(['auth', 'role:User']);
 Route::put('/cart/{id}/remove', [CartController::class, 'remove'])->name('carts.remove')->middleware(['auth', 'role:User']);
 Route::delete('/cart/{id}/delete', [CartController::class, 'destroy'])->name('carts.destroy')->middleware(['auth', 'role:User']);
+
+Route::post('/transaction', [TransactionController::class, 'store'])->name('transactions.store')->middleware(['auth', 'role:User']);
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
