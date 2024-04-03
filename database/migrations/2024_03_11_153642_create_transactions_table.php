@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->decimal('subtotal', 8, 2);
-            $table->decimal('tax', 8, 2);
-            $table->decimal('total', 8, 2);
+            $table->bigInteger('user_id')->unsigned();
+            $table->integer('subtotal');
+            $table->integer('tax');
+            $table->integer('total');
             $table->string('image')->nullable();
             $table->string('status');
             $table->timestamps();
+            
+            $table->foreign('user_id')->references('id')->on('users');
         });
     }
 

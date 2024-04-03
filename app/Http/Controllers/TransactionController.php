@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\MembershipUser;
 use App\Models\Transaction;
 use App\Models\Order;
-use App\Models\Cart;
 use Illuminate\Validation\Rule;
 use Session;
 use Auth;
@@ -21,11 +20,20 @@ class TransactionController extends Controller
      */
     public function index()
     {
-        $title = "Transaction Management";
+        $title = "Histori Transaksi";
         $auth = Auth::user();
 
-        $transactions = Transaction::latest()->get();
+        $transactions = Transaction::with('orders')->where('user_id', $auth->id)->latest()->get();
         return view('transactions.index', compact('transactions', 'title', 'auth'))->with('i');
+    }
+    
+    public function report()
+    {
+        $title = "Manajemen Transaksi";
+        $auth = Auth::user();
+
+        $transactions = Transaction::with('orders')->latest()->get();
+        return view('transactions.report', compact('transactions', 'title', 'auth'))->with('i');
     }
 
     /**
@@ -42,25 +50,25 @@ class TransactionController extends Controller
 
         $auth = Auth::user();
 
-        $carts = Cart::with('product')->where('user_id', $auth->id)->get();
+        $orders = order::with('product')->where('user_id', $auth->id)->get();
 
         $member = MembershipUser::where('user_id', $auth->id)->first();
         
         if ($member && $member->end_date > now()) {
             $member_check = true;
-            $subtotal = $carts->sum(function ($cart) {
-                return $cart->product->member_price * $cart->qty;
+            $subtotal = $orders->sum(function ($order) {
+                return $order->product->member_price * $order->qty;
             });
-            $discount = $carts->sum(function ($cart) {
-                return ($cart->product->member_price * $cart->product->discount / 100) * $cart->qty;
+            $discount = $orders->sum(function ($order) {
+                return ($order->product->member_price * $order->product->discount / 100) * $order->qty;
             });
         } else {
             $member_check = false;
-            $subtotal = $carts->sum(function ($cart) {
-                return $cart->product->price * $cart->qty;
+            $subtotal = $orders->sum(function ($order) {
+                return $order->product->price * $order->qty;
             });
-            $discount = $carts->sum(function ($cart) {
-                return ($cart->product->price * $cart->product->discount / 100) * $cart->qty;
+            $discount = $orders->sum(function ($order) {
+                return ($order->product->price * $order->product->discount / 100) * $order->qty;
             });
         }
 
@@ -73,28 +81,29 @@ class TransactionController extends Controller
         }
 
         $transaction = Transaction::create([
+            'user_id' => $auth->id,
             'subtotal' => $subtotal,
             'tax' => 2500,
             'total' => $subtotal + 2500,
             'image' => $imageName,
-            'status' => 'Proses', 
+            'status' => 'Menunggu Verifikasi', 
         ]);
 
         if(!$transaction){
             Session::flash('failed', 'Terdapat Kesalahan!');
-            return redirect()->route('carts.index');
+            return redirect()->route('orders.index');
         }
         
-        foreach ($carts as $cart) {
+        foreach ($orders as $order) {
             $order = Order::create([
                 'transaction_id' => $transaction->id,
-                'product_id' => $cart->product_id,
-                'user_id' => $cart->user_id,
-                'qty' => $cart->qty,
+                'product_id' => $order->product_id,
+                'user_id' => $order->user_id,
+                'qty' => $order->qty,
             ]);
         }
 
-        Session::flash('success', 'transaction added successfully!');
+        Session::flash('success', 'Transaksi berhasil, silahkan tunggu verifikasi dari admin!');
         return redirect()->route('transactions.index');
     }
 
@@ -104,13 +113,68 @@ class TransactionController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+    public function show($id)
+    {
+        $title = "Detail Transaksi";
+        $auth = Auth::user();
+        $transaction = Transaction::findOrFail($id);
+        $orders = Order::with('product')->where('transaction_id', $transaction->id)->get();
+
+        $member = MembershipUser::where('user_id', $auth->id)->first();
+        
+        if ($member && $member->end_date > now()) {
+            $member_check = true;
+            $subtotal = $orders->sum(function ($order) {
+                return $order->product->member_price * $order->qty;
+            });
+            $discount = $orders->sum(function ($order) {
+                return ($order->product->member_price * $order->product->discount / 100) * $order->qty;
+            });
+        } else {
+            $member_check = false;
+            $subtotal = $orders->sum(function ($order) {
+                return $order->product->price * $order->qty;
+            });
+            $discount = $orders->sum(function ($order) {
+                return ($order->product->price * $order->product->discount / 100) * $order->qty;
+            });
+        }
+
+        $total = $subtotal - $discount;
+        
+        return view('transactions.show', compact('orders', 'auth', 'title', 'member_check', 'total'))->with('i');
+    }
+
     public function edit($id)
     {
-        $title = "Edit transaction";
+        $title = "Detail Transaksi";
         $auth = Auth::user();
+        $transaction = Transaction::findOrFail($id);
+        $orders = Order::with('product')->where('transaction_id', $transaction->id)->get();
 
-        $transaction = transaction::findOrFail($id);
-        return view('transactions.edit', compact('transaction', 'title', 'auth'));
+        $member = MembershipUser::where('user_id', $auth->id)->first();
+        
+        if ($member && $member->end_date > now()) {
+            $member_check = true;
+            $subtotal = $orders->sum(function ($order) {
+                return $order->product->member_price * $order->qty;
+            });
+            $discount = $orders->sum(function ($order) {
+                return ($order->product->member_price * $order->product->discount / 100) * $order->qty;
+            });
+        } else {
+            $member_check = false;
+            $subtotal = $orders->sum(function ($order) {
+                return $order->product->price * $order->qty;
+            });
+            $discount = $orders->sum(function ($order) {
+                return ($order->product->price * $order->product->discount / 100) * $order->qty;
+            });
+        }
+
+        $total = $subtotal - $discount;
+        
+        return view('transactions.edit', compact('orders', 'auth', 'title', 'member_check', 'transaction', 'total'))->with('i');
     }
 
     /**
@@ -142,134 +206,33 @@ class TransactionController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function cancel(Request $request, $id)
     {
-        $transaction = transaction::findOrFail($id);
-        $transaction->delete();
+        $transaction = Transaction::findOrFail($id)->update([
+            'status' => 'Dibatalkan',
+        ]);
 
-        Session::flash('success', 'transaction deleted successfully!');
+        Session::flash('success', 'Transaksi Dibatalkan!');
+        return redirect()->route('transactions.report');
+    }
+
+    public function send(Request $request, $id)
+    {
+        $transaction = Transaction::findOrFail($id)->update([
+            'status' => 'Sedang Dikirim',
+        ]);
+
+        Session::flash('success', 'Transaksi Disetujui dan Sedang Dikirim!');
+        return redirect()->route('transactions.report');
+    }
+
+    public function done(Request $request, $id)
+    {
+        $transaction = Transaction::findOrFail($id)->update([
+            'status' => 'Selesai',
+        ]);
+
+        Session::flash('success', 'Transaksi Selesai!');
         return redirect()->route('transactions.index');
-    }
-
-    public function my()
-    {
-        $title = 'Histori transaction';
-        $auth = Auth::user();
-        $transactions = transactionTransaction::with('transaction')->where('user_id', $auth->id)->latest()->get();
-
-        foreach ($transactions as $transaction) {
-            if ($transaction->status == 'Selesai') {
-                $transaction->end_date = $transaction->updated_at->format('d F Y');
-            }
-        }
-
-        $member = transactionUser::where('user_id', $auth->id)->first();
-
-        return view('transactions.my', compact('transactions', 'auth', 'title', 'member'))->with('i');
-    }
-
-    public function transaction()
-    {
-        $title = 'Pembelian transaction';
-        $auth = Auth::user();
-        $transactions = transaction::all();
-
-        return view('transactions.transaction', compact('transactions', 'auth', 'title'));
-    }
-    
-    public function purchase(Request $request)
-    {
-        $request->validate([
-            'transaction_id' => 'required|exists:transactions,id',
-            'image' => 'required|image|max:2048',
-        ]);
-
-        $user = Auth::user();
-
-        $transaction = new transactionTransaction();
-        $transaction->user_id = $user->id;
-        $transaction->transaction_id = $request->transaction_id;
-        
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalExtension();
-            $image->move(public_path('image/transactions'), $imageName);
-            $transaction->image = $imageName;
-        }
-
-        $transaction->status = "Proses";
-        
-        $transaction->save();
-
-        Session::flash('success', 'Pembelian transaction berhasil, tunggu konfirmasi!');
-
-        return redirect()->route('transactions.my');
-    }
-
-    public function list()
-    {
-        $title = 'Transaksi transaction';
-        $auth = Auth::user();
-        $transactions = transactionTransaction::with('transaction', 'user')->latest()->get();
-
-        foreach ($transactions as $transaction) {
-            if ($transaction->status == 'Selesai') {
-                $transaction->end_date = $transaction->updated_at->format('d F Y');
-            }
-        }
-
-        return view('transactions.list', compact('transactions', 'auth', 'title'));
-    }
-    
-    public function activation($id)
-    {
-        $title = 'Aktivasi transaction';
-        $auth = Auth::user();
-        $transactions = transactionTransaction::with('transaction', 'user')->findOrFail($id);
-
-        return view('transactions.activation', compact('transactions', 'auth', 'title'));
-    }
-
-    public function activate(Request $request, $id)
-    {
-        $transaction = transactionTransaction::findOrFail($id);
-
-        $request->validate([
-            'status' => 'required'
-        ]);
-
-        if($request->status == 'Selesai'){
-            $transaction_user = transactionUser::where('user_id', $transaction->user_id)->first();
-
-            if($transaction_user){
-                if($transaction_user->end_date > now()){
-                    $start = $transaction_user->end_date;
-                } else {
-                    $start = now();
-                }
-
-                $end = $start->copy()->addMonths($transaction->transaction->duration);
-                $transaction_user->update([
-                    'start_date' => $start,
-                    'end_date' => $end,
-                ]);
-            } else {
-                $start = now();
-
-                $end = $start->copy()->addMonths($transaction->transaction->duration);
-                transactionUser::create([
-                    'user_id' => $transaction->user_id,
-                    'start_date' => $start,
-                    'end_date' => $end,
-                ]);
-            }
-        }
-
-        $transaction->update([
-            'status' => $request->status,
-        ]);
-
-        Session::flash('success', 'transaction updated successfully!');
-        return redirect()->route('transactions.list');
     }
 }

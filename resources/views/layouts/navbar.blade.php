@@ -25,11 +25,17 @@
                             <a class="nav-link" href="{{ route('memberships.index') }}">Membership</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ route('transactions.report') }}">Transaksi</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ route('memberships.list') }}">Transaksi Membership</a>
                         </li>
                     @else
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('memberships.my') }}">Histori Membership</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('transactions.index') }}">Transaksi</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('memberships.transaction') }}">Beli Membership</a>

@@ -5,7 +5,7 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
-                    <div class="card-header">Transaksi Saya</div>
+                    <div class="card-header">{{ $title }}</div>
 
                     <div class="card-body">
                         @if (session('success'))
@@ -19,6 +19,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Produk</th>
+                                    <th>Pembeli</th>
                                     <th>Total Harga</th>
                                     <th class="text-center">Status</th>
                                     <th>Tanggal</th>
@@ -39,6 +40,7 @@
                                             </div>
                                             <p class=" m-0 mt-2" style="font-size: 12px">+{{ $transaction->orders->count() - 1 }} produk</p>
                                         </td>
+                                        <td>{{ $transaction->user->name }}</td>
                                         <td>{{ 'Rp ' . number_format($transaction->total, 0, ',', '.') }}</td>
                                         <td class="text-center">
                                             @if($transaction->status == 'Selesai')
@@ -51,15 +53,9 @@
                                         </td>
                                         <td>{{ date('d F Y', strtotime($transaction->created_at)) }}</td>
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <a href="{{ route('transactions.show', $transaction->id) }}" class="btn btn-sm btn-primary">Detail</a>
-                                                @if($transaction->status == 'Sedang Dikirim')
-                                                <form method="POST" action="{{ route('transactions.done', $transaction->id) }}">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-success ms-2">Selesai</button>
-                                                </form>
-                                                @endif
-                                            </div>
+                                            @if($transaction->status == 'Diproses')
+                                            <a href="{{ route('transactions.edit', $transaction->id) }}" class="btn btn-sm btn-success">Edit</a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

@@ -33,7 +33,10 @@ Route::put('/cart/{id}/add', [CartController::class, 'add'])->name('carts.add')-
 Route::put('/cart/{id}/remove', [CartController::class, 'remove'])->name('carts.remove')->middleware(['auth', 'role:User']);
 Route::delete('/cart/{id}/delete', [CartController::class, 'destroy'])->name('carts.destroy')->middleware(['auth', 'role:User']);
 
+Route::get('/transaction', [TransactionController::class, 'index'])->name('transactions.index')->middleware(['auth', 'role:User']);
 Route::post('/transaction', [TransactionController::class, 'store'])->name('transactions.store')->middleware(['auth', 'role:User']);
+Route::get('/transaction/detail/{id}', [TransactionController::class, 'show'])->name('transactions.show')->middleware(['auth', 'role:User']);
+Route::post('/transaction/done/{id}', [TransactionController::class, 'done'])->name('transactions.done')->middleware(['auth', 'role:User']);
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
@@ -77,3 +80,9 @@ Route::post('/user/membership', [MembershipController::class, 'purchase'])->name
 Route::get('/admin/membership/list', [MembershipController::class, 'list'])->name('memberships.list')->middleware(['auth', 'role:Admin']);
 Route::get('/admin/membership/{id}/activation', [MembershipController::class, 'activation'])->name('memberships.activation')->middleware(['auth', 'role:Admin']);
 Route::put('/admin/membership/{id}/activate', [MembershipController::class, 'activate'])->name('memberships.activate')->middleware(['auth', 'role:Admin']);
+
+Route::get('/admin/transaction', [TransactionController::class, 'report'])->name('transactions.report')->middleware(['auth', 'role:Admin']);
+Route::get('/admin/transaction/edit/{id}', [TransactionController::class, 'edit'])->name('transactions.edit')->middleware(['auth', 'role:Admin']);
+Route::post('/admin/transaction/cancel/{id}', [TransactionController::class, 'cancel'])->name('transactions.cancel')->middleware(['auth', 'role:Admin']);
+Route::post('/admin/transaction/send/{id}', [TransactionController::class, 'send'])->name('transactions.send')->middleware(['auth', 'role:Admin']);
+Route::post('/admin/transaction/done/{id}', [TransactionController::class, 'done'])->name('transactions.doneAdmin')->middleware(['auth', 'role:Admin']);
