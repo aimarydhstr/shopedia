@@ -53,7 +53,7 @@
                                         </td>
                                         <td>{{ date('d F Y', strtotime($transaction->created_at)) }}</td>
                                         <td>
-                                            @if($transaction->status == 'Diproses')
+                                            @if($transaction->status == 'Menunggu Verifikasi')
                                             <a href="{{ route('transactions.edit', $transaction->id) }}" class="btn btn-sm btn-success">Edit</a>
                                             @endif
                                         </td>

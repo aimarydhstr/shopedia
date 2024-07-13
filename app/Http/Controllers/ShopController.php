@@ -9,6 +9,10 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\MembershipUser;
 use App\Models\Cart;
+use App\Models\Review;
+use App\Models\Transaction;
+use App\Models\Order;
+use App\Models\Reply;
 use Illuminate\Validation\Rule;
 use Session;
 
@@ -23,6 +27,14 @@ class ShopController extends Controller
         $auth = Auth::user();
         $products = Product::latest()->get();
         $categories = Category::orderBy('name', 'asc')->get();
+
+        $rate = $products->mapWithKeys(function ($product) {
+            $averageRate = Review::where('product_id', $product->id)
+                ->avg('rate');
+        
+            return [$product->id => round($averageRate, 1)];
+        });
+
         $member = '';
 
         if($auth){
@@ -35,7 +47,7 @@ class ShopController extends Controller
             $member_check = false;
         }
         
-        return view('shops.index', compact('auth', 'title', 'products', 'categories', 'member_check'));
+        return view('shops.index', compact('auth', 'title', 'products', 'categories', 'member_check', 'rate'));
     }
 
     public function search(Request $request)
@@ -44,6 +56,12 @@ class ShopController extends Controller
         $auth = Auth::user();
         $query = $request->input('query');
         $products = Product::where('name', 'LIKE', "%$query%")->latest()->get();
+        $rate = $products->mapWithKeys(function ($product) {
+            $averageRate = Review::where('product_id', $product->id)
+                ->avg('rate');
+        
+            return [$product->id => round($averageRate, 1)];
+        });
         $categories = Category::orderBy('name', 'asc')->get();
         $member = '';
 
@@ -57,7 +75,7 @@ class ShopController extends Controller
             $member_check = false;
         }
 
-        return view('shops.search', compact('auth', 'title', 'products', 'query', 'categories', 'member_check'));
+        return view('shops.search', compact('auth', 'title', 'products', 'query', 'categories', 'member_check', 'rate'));
     }
 
     public function category($slug)
@@ -67,6 +85,12 @@ class ShopController extends Controller
         $categories = Category::orderBy('name', 'asc')->get();
         $category = Category::where('slug', $slug)->first();
         $products = Product::where('category_id', $category->id)->latest()->get();
+        $rate = $products->mapWithKeys(function ($product) {
+            $averageRate = Review::where('product_id', $product->id)
+                ->avg('rate');
+        
+            return [$product->id => round($averageRate, 1)];
+        });
         $member = '';
 
         if($auth){
@@ -79,7 +103,7 @@ class ShopController extends Controller
             $member_check = false;
         }
 
-        return view('shops.category', compact('auth', 'title', 'products', 'category', 'categories', 'member_check'));
+        return view('shops.category', compact('auth', 'title', 'products', 'category', 'categories', 'member_check', 'rate'));
     }
     
     public function product($slug)
@@ -88,6 +112,17 @@ class ShopController extends Controller
         $auth = Auth::user();
         $product = Product::with('category')->where('slug', $slug)->first();
         $categories = Category::orderBy('name', 'asc')->get();
+
+        $reviews = Review::where('product_id', $product->id)->latest()->get();
+        $rate = round($reviews->avg('rate'), 1);
+        $admin = User::where('role', 'Admin')->first();
+        $order = '';
+        if($auth){
+            $order = Order::where('user_id', $auth->id)->where('product_id', $product->id)->whereHas('transaction', function ($query) {
+                    $query->where('status', 'Selesai');
+                })->first();
+        }
+
         $member = '';
 
         if($auth){
@@ -100,7 +135,7 @@ class ShopController extends Controller
             $member_check = false;
         }
 
-        return view('shops.product', compact('auth', 'title', 'product', 'categories', 'member_check'));
+        return view('shops.product', compact('auth', 'title', 'product', 'categories', 'member_check', 'reviews', 'admin', 'rate', 'order'));
     }
 
     /**

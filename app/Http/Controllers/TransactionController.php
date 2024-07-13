@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\MembershipUser;
 use App\Models\Transaction;
 use App\Models\Order;
+use App\Models\Cart;
 use Illuminate\Validation\Rule;
 use Session;
 use Auth;
@@ -50,24 +51,24 @@ class TransactionController extends Controller
 
         $auth = Auth::user();
 
-        $orders = order::with('product')->where('user_id', $auth->id)->get();
+        $carts = Cart::with('product')->where('user_id', $auth->id)->get();
 
         $member = MembershipUser::where('user_id', $auth->id)->first();
         
         if ($member && $member->end_date > now()) {
             $member_check = true;
-            $subtotal = $orders->sum(function ($order) {
+            $subtotal = $carts->sum(function ($order) {
                 return $order->product->member_price * $order->qty;
             });
-            $discount = $orders->sum(function ($order) {
+            $discount = $carts->sum(function ($order) {
                 return ($order->product->member_price * $order->product->discount / 100) * $order->qty;
             });
         } else {
             $member_check = false;
-            $subtotal = $orders->sum(function ($order) {
+            $subtotal = $carts->sum(function ($order) {
                 return $order->product->price * $order->qty;
             });
-            $discount = $orders->sum(function ($order) {
+            $discount = $carts->sum(function ($order) {
                 return ($order->product->price * $order->product->discount / 100) * $order->qty;
             });
         }
@@ -94,12 +95,12 @@ class TransactionController extends Controller
             return redirect()->route('orders.index');
         }
         
-        foreach ($orders as $order) {
+        foreach ($carts as $cart) {
             $order = Order::create([
                 'transaction_id' => $transaction->id,
-                'product_id' => $order->product_id,
-                'user_id' => $order->user_id,
-                'qty' => $order->qty,
+                'product_id' => $cart->product_id,
+                'user_id' => $cart->user_id,
+                'qty' => $cart->qty,
             ]);
         }
 

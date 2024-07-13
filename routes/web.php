@@ -10,6 +10,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,10 @@ Route::get('/transaction', [TransactionController::class, 'index'])->name('trans
 Route::post('/transaction', [TransactionController::class, 'store'])->name('transactions.store')->middleware(['auth', 'role:User']);
 Route::get('/transaction/detail/{id}', [TransactionController::class, 'show'])->name('transactions.show')->middleware(['auth', 'role:User']);
 Route::post('/transaction/done/{id}', [TransactionController::class, 'done'])->name('transactions.done')->middleware(['auth', 'role:User']);
+
+Route::post('/review/store/{slug}', [ReviewController::class, 'store'])->name('reviews.store')->middleware(['auth', 'role:User']);
+Route::post('/review/reply/{id}', [ReviewController::class, 'reply'])->name('reviews.reply')->middleware(['auth', 'role:Admin']);
+
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);

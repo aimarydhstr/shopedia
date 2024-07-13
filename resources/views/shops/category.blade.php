@@ -43,7 +43,7 @@
                                         <b>{{ 'Rp ' . number_format($product->price - ($product->price * ($product->discount / 100)), 0, ',', '.') }}</b>
                                     </p>
                                     @endif
-                                    <p class="card-text" style="font-size: 14px">Diskon {{$product->discount}}%</p>
+                                    <p class="card-text" style="font-size: 14px"><span class="text-warning">★</span> {{$rate[$product->id]}} | Diskon {{$product->discount}}%</p>
                                 </div>
                             </div>
                         </div>
